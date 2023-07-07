@@ -1,0 +1,16 @@
+nom-utilisateur: Toto
+
+operations: 5 + 5 = 10, res = 5 - 5 = 0
+
+date et heure: 2023-07-07 14:24:19
+
+**************************************
+
+nom-utilisateur: Toto
+
+operations: 5 + 5 = 10, res = 5 - 5 = 0
+
+date et heure: 2023-07-07 14:24:31
+
+**************************************
+
