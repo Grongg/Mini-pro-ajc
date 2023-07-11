@@ -118,6 +118,7 @@ def update_in_classe(param, data, name):
 
 def check_matricule(matricule):
     connexion, curseur = connexion_bdd()
+    
     curseur.execute(f'''
                     SELECT matricule FROM student
                     ''')
@@ -131,6 +132,26 @@ def check_matricule(matricule):
     connexion.commit()
     curseur.close()
     return 0
+            
+def check_exist_mat(matricule):
+    connexion, curseur = connexion_bdd()
+    
+    curseur.execute(f'''
+                    SELECT matricule FROM student
+                    ''')
+    
+    res = curseur.fetchall()
+    if len(matricule) < 8 or len(matricule) > 10:
+        return 1
+    matricule = f"('{matricule}',)"
+    for mat in res:
+        # print(mat, matricule)
+        if str(mat) == matricule:
+            return 0
+    connexion.commit()
+    curseur.close()
+    
+    return 1
             
 def get_student(matricule):
     
@@ -151,7 +172,7 @@ def get_classe(name):
     
     curseur.execute(f'''
                     SELECT * FROM classe WHERE name = ?
-                    ''', str(name),)
+                    ''', (str(name),))
     res = curseur.fetchone()
     connexion.commit()
     curseur.close()
@@ -196,6 +217,35 @@ def get_classe_id(name):
     curseur.close()
 
     return res
+
+
+def get_student_id(matricule):
+    
+    connexion, curseur = connexion_bdd()
+    data = (matricule, )
+    curseur.execute("""
+                    SELECT id FROM student where matricule = ?
+                    """, data)
+    res = curseur.fetchone()
+    connexion.commit()
+    curseur.close()
+
+    return res
+
+def fill_student_list():
+    
+    connexion, curseur = connexion_bdd()
+
+    curseur.execute(f"""
+                    SELECT * FROM student
+                    """)
+    resultats = curseur.fetchall()
+    transformed_resultats = []
+    for resultat in resultats:
+        transformed_resultats.append(list(resultat))
+    connexion.commit()
+    curseur.close()
+    return resultats
 
 def get_all_students():
     

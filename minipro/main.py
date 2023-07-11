@@ -1,15 +1,19 @@
+import string, random
 import re
 from datetime import datetime
 import time
 import os 
 import sql.bdd_request as sql
 
+student_list = []
+
 class classe():
 
     def __init__(self, name, average = 0):
         self.__name = name
         self.__average = average
-        sql.insert_in_classe(self.__name)
+        sql.insert_in_classe(self.__name, self.__average)
+        print(self.__average)
 
     def add_student(self, student):
         sql.update_in_student("classe", sql.get_classe_id(str(self.__name))[0], student.get_matricule())
@@ -75,9 +79,13 @@ class student(person):
         super().__init__(name, date_of_birth)
         self.__mark = mark
         self.__name = name
+        self.__matricule = ""
         self.create_matricule()
         self.__date_of_birth = date_of_birth
         sql.insert_in_student({"name": self.__name, "date_of_birth": self.__date_of_birth, "matricule": self.__matricule, "mark": self.__mark}, None)
+        # print(student_list)
+        student_list.append(student)
+        print(student_list)
 
     # fonction qui test si le check de doublon marche bien
     # def get_matricule(self, counter=[0]):
@@ -105,7 +113,6 @@ class student(person):
     #             self.get_matricule()
 
     def create_matricule(self):
-        import string, random
 
         self.__matricule = ""
 
@@ -115,9 +122,12 @@ class student(person):
                 self.__matricule += random.choice(string.ascii_letters)
             elif rdm == 1:
                 self.__matricule += str(random.randrange(0,10))
-            mat = sql.check_matricule(self.__matricule)
-            if mat == 1:
-                self.create_matricule()
+                
+        mat = sql.check_matricule(self.__matricule)
+        if len(sql.get_all_students()) == 0:
+            mat = 0
+        if mat == 1:
+            self.create_matricule()
 
     def get_matricule(self):
         return self.__matricule
@@ -153,7 +163,7 @@ class student(person):
     def documentation(self):
         print("""Ceci est la class student""")
         
-    def modify_student(self, classe):
+    def modify_student(self):
         os.system('cls')
         while 1:
             entry = input("""Que voulez vous modifier chez l'etudiant:
@@ -263,7 +273,7 @@ def school():
                          [1]: Afficher la liste des Classes
                          [2]: Afficher la liste des Eleves
                          [3]: Ajouter une nouvelle Classe
-                         [4]: Ajouter un nouveau/nouvelle Eleve
+                         [4]: Ajouter un nouvel Eleve
                          [5]: Modifier une Classe en particulier
                          [6]: Modifier un Eleve en particulier
                          [7]: Voir une demo du programme
@@ -279,31 +289,56 @@ def school():
                 sql.list_students()
                 time.sleep(2)
             elif int(entry) == 3:
+                os.system('cls')
+                flag_name = False
+                flag_qt = False
+                flag_avgmark = False
                 while 1:
-                    os.system('cls')
+                    if flag_name == True:
+                                break
                     entry = input("Veuillez entrer le nom de la Classe ou ecriver \"cancel\" ou \"c\" pour annuler:\n")
                     if entry == "cancel" or entry == "c":
                         os.system('cls')
                         break
-                    elif re.search("[^a-zA-Zs]", entry)  is None:
-                        entry2 = input("Connaissez-vous la moyenne de la Classe ?\n[1]: Oui\n[2]: Non\n")
-                        if entry2.isdigit():
-                            if int(entry) == 1:
-                                classe = classe(entry, entry2)
-                            elif int(entry) == 1:
-                                classe = classe(entry)
-                                sql.get_classe(entry)
+                    elif re.search("[^a-zA-Z0-9]", entry)  is None:
+                        flag_name = True
+                        while 1:
+                            if flag_qt == True:
+                                break
+                            entry2 = input("Connaissez-vous la moyenne de la Classe ?\n[1]: Oui\n[2]: Non\n")
+                            if entry2.isdigit():
+                                if int(entry2) == 1:
+                                    flag_qt = True
+                                    while 1:
+                                        if flag_avgmark == True:
+                                            break
+                                        entry3 = input("Veuillez entrer la moyenne de la Classe (ex: 10):\n")
+                                        if entry3.isdigit():
+                                            classe(entry, entry3)
+                                            print(sql.get_classe(str(entry)))
+                                            flag_avgmark = True
+                                        else:
+                                            print("Veuillez ecrire une option entre 1 et 2 ex: 1")
+                                            continue
+                                            
+                                elif int(entry2) == 2:
+                                    classe(entry)
+                                    os.system('cls')
+                                    print(sql.get_classe(str(entry)))
+                                    flag_qt = True
+                                    break
+                                else:
+                                    print("Veuillez ecrire une option entre 1 et 2 ex: 1")
+                                    continue
                             else:
                                 print("Veuillez ecrire une option entre 1 et 2 ex: 1")
                                 continue
-                        else:
-                            print("Veuillez ecrire une option entre 1 et 2 ex: 1")
-                            continue
                     else:
                         print("Veuillez ecrire un nom valide ou ecriver \"cancel\" ou \"c\" pour annuler")
                         continue
             elif int(entry) == 4:
                 os.system('cls')
+                print(student_list)
                 flag_name = False
                 flag_dob = False
                 flag_mark = False
@@ -352,6 +387,7 @@ def school():
                                     os.system('cls')
                                     matricule = stud.get_matricule()
                                     print(sql.get_student(str(matricule)))
+                                    # print(student_list)
                                     flag_mark = True
                                 else:
                                     print("Veuillez ecrire une note valide ou ecriver \"cancel\" ou \"c\" pour annuler")
@@ -362,7 +398,25 @@ def school():
                         print("Veuillez ecrire un nom valide ou ecriver \"cancel\" ou \"c\" pour annuler")
                         continue
             elif int(entry) == 6:
-                pass
+                while 1:
+                    entry = str(input("Veuillez entrer le matricule de l'Eleve qui vous voulez modifier:\n"))
+                    print("entry:", entry)
+                    if sql.check_exist_mat(entry) == 1:
+                        print("Matricule invalide, veuillez reesayer svp")
+                        continue
+                    else:
+                        stud = sql.get_student(entry)
+                        found_student = ""
+                        print(student_list)
+                        for s in student_list:
+                            test = s.get_matricule(s)
+                            print(student_list, "&&", test, "&&", entry)
+                            if s.get_matricule(s) == entry:
+                                found_student = s
+                                break
+                        if found_student == "":
+                            print("Matricule invalide, veuillez reesayer svp")
+                        found_student.modify_student()
             elif int(entry) == 8:
                 os.system('cls')
                 break
@@ -378,31 +432,4 @@ def school():
 
 if __name__ == '__main__':
     
-    sql.create_student_table()
-    sql.create_classe_table()
-    
     school()
-    # classeA = classe("5eE")
-    # classeB = classe("6eE")
-
-    # studentA = student("Patrice", "2023-06-07", 8)
-    # studentB = student("Mirah", "2023-06-07", 18)
-    # studentC = student("Camille", "2023-06-07", 18)
-    # studentD = student("Stan", "2023-06-07", 8)
-
-    # classeA.add_student(studentA)
-    # classeA.add_student(studentC)
-    # classeB.add_student(studentB)
-    # classeB.add_student(studentD)
-    # sql.list_students()
-    # sql.list_classes()
-
-    # my_class.add_student(studentB)
-    # print(my_class.getStudentsList())
-    # my_class.remove_student(studentB)
-    # print(my_class.getStudentsList())
-    # my_class.modify_student(studentA)
-    # my_class.calcul_moyenne()
-    # my_class.print_average()
-    # studentA.documentation()
-    # print(studentA.__doc__, end='')
